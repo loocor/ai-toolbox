@@ -1,6 +1,6 @@
 import React from 'react';
 import { Typography, Button, Space, Empty, message, Modal, Spin, Collapse } from 'antd';
-import { PlusOutlined, FolderOpenOutlined, AppstoreOutlined, SyncOutlined, EyeOutlined, ExclamationCircleOutlined, LinkOutlined, DatabaseOutlined, ImportOutlined, FileTextOutlined } from '@ant-design/icons';
+import { PlusOutlined, FolderOpenOutlined, AppstoreOutlined, SyncOutlined, EyeOutlined, ExclamationCircleOutlined, LinkOutlined, EllipsisOutlined, DatabaseOutlined, ImportOutlined, FileTextOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import { openUrl, revealItemInDir } from '@tauri-apps/plugin-opener';
 import { invoke } from '@tauri-apps/api/core';
@@ -46,6 +46,7 @@ import { listen } from '@tauri-apps/api/event';
 import { codexPromptApi } from '@/services/codexPromptApi';
 import { refreshTrayMenu, hasAllApiHubExtension } from '@/services/appApi';
 import { useKeepAlive } from '@/components/layout/KeepAliveOutlet';
+import { useSettingsStore } from '@/stores';
 import CodexProviderCard from '../components/CodexProviderCard';
 import CodexProviderFormModal from '../components/CodexProviderFormModal';
 import CodexCommonConfigModal from '../components/CodexCommonConfigModal';
@@ -53,6 +54,8 @@ import ImportConflictDialog from '../components/ImportConflictDialog';
 import ImportFromAllApiHubModal from '../components/ImportFromAllApiHubModal';
 import AllApiHubIcon from '@/components/common/AllApiHubIcon';
 import CodexConfigPreviewModal from '@/components/common/CodexConfigPreviewModal';
+import JsonPreviewModal from '@/components/common/JsonPreviewModal';
+import SidebarSettingsModal from '@/components/common/SidebarSettingsModal';
 import { GlobalPromptSettings } from '@/features/coding/shared/prompt';
 import type { OpenCodeAllApiHubProvider } from '@/services/opencodeApi';
 import SectionSidebarLayout from '@/components/layout/SectionSidebarLayout/SectionSidebarLayout';
@@ -62,6 +65,10 @@ const { Title, Text, Link } = Typography;
 const CodexPage: React.FC = () => {
   const { t } = useTranslation();
   const { isActive } = useKeepAlive();
+  const {
+    sidebarHiddenByPage,
+    setSidebarHidden,
+  } = useSettingsStore();
   const [loading, setLoading] = React.useState(false);
   const [configPath, setConfigPath] = React.useState<string>('');
   const [providers, setProviders] = React.useState<CodexProvider[]>([]);
@@ -82,6 +89,8 @@ const CodexPage: React.FC = () => {
   const [allApiHubImportModalOpen, setAllApiHubImportModalOpen] = React.useState(false);
   const [allApiHubAvailable, setAllApiHubAvailable] = React.useState(false);
   const [promptExpandNonce, setPromptExpandNonce] = React.useState(0);
+  const [settingsModalOpen, setSettingsModalOpen] = React.useState(false);
+  const sidebarHidden = sidebarHiddenByPage.codex;
 
   // 配置拖拽传感器
   const sensors = useSensors(
@@ -520,6 +529,7 @@ const CodexPage: React.FC = () => {
   return (
     <SectionSidebarLayout
       sidebarTitle={t('codex.title')}
+      sidebarHidden={sidebarHidden}
       getIcon={(id) => {
         switch (id) {
           case 'codex-providers':
@@ -602,6 +612,12 @@ const CodexPage: React.FC = () => {
                 </Button>
               </Space>
             </div>
+
+            <Space>
+              <Button type="text" icon={<EllipsisOutlined />} onClick={() => setSettingsModalOpen(true)}>
+                {t('common.moreOptions')}
+              </Button>
+            </Space>
           </div>
         </div>
 
@@ -791,6 +807,13 @@ const CodexPage: React.FC = () => {
           onClose={() => setPreviewModalOpen(false)}
           title={t('codex.preview.currentConfigTitle')}
           data={previewData}
+        />
+
+        <SidebarSettingsModal
+          open={settingsModalOpen}
+          onClose={() => setSettingsModalOpen(false)}
+          sidebarVisible={!sidebarHidden}
+          onSidebarVisibleChange={(visible) => setSidebarHidden('codex', !visible)}
         />
       </div>
     </SectionSidebarLayout>
